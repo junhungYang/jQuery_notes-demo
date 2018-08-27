@@ -1,0 +1,132 @@
+* {
+    padding: 0;
+    margin: 0;
+    font-size: 0;
+}
+html,
+body,
+.wrapper,
+.content {
+    height: 100%;
+    width: 100%;
+}
+
+/* .brand header部分 */
+.wrapper .content .brand {
+    width: 100%;
+    position: absolute;
+    background: white;
+    z-index: 99;
+    text-align: center;
+}
+.wrapper .content .brand img {
+    height: 50px;
+}
+
+/* .bg背景区域 */
+.wrapper .content .bg {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    opacity: 0.4;
+}
+.wrapper .content .bg img {
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+}
+
+/* .img为图片展示模块 */
+.wrapper .content .img {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 99;
+    width: 700px;
+    height: 400px;
+    overflow: hidden;
+    border: 4px solid rgba(255, 255, 255, 0.342);
+}
+.wrapper .content .img img {
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+}
+
+/* .text 文本内容模块 */
+.wrapper .content .text {
+    position: absolute;
+    top: 85%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 16px;
+    z-index: 99;
+    color: rgb(82, 82, 82);
+    font-family: -apple-system;
+}
+
+/* .listBtn 小按钮 */
+.wrapper .listBtn {
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    top: 77%;
+    z-index: 99;
+}
+.wrapper .listBtn div {
+    display: inline-block;
+    margin-left: 7px;
+    width: 8px;
+    height: 8px;
+    background: rgb(253, 229, 229);
+    border-radius: 50%;
+}
+
+/* .direcBtn 左右按钮模块 */
+.direcBtn div {
+    position: absolute;
+    top: 50%;
+    width: 30px;
+    transform: translate(0, -50%);
+    transition: all 150ms linear;
+}
+.direcBtn .rightBtn {
+    right: 250px;
+}
+.direcBtn .leftBtn {
+    left: 250px;
+}
+.direcBtn img {
+    width: 100%
+}
+.direcBtn .rightBtn:active {
+    top: 51%;
+    right: 247px;
+}
+.direcBtn .leftBtn:active {
+    top: 51%;
+    left: 253px;
+}
+.direcBtn div:hover {
+    width: 35px;
+}
+
+/* 背景图片与展示图片淡出淡入动画 */
+@keyframes revOpacity {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+@keyframes opacity {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}

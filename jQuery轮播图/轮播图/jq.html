@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        *{
+            margin:0;
+            padding:0;
+            list-style:none;
+        }
+        .wrapper{
+            position: relative;
+            margin:100px auto;
+            width:400px;
+            height:250px;
+            /* border:1px solid #000; */
+            overflow:hidden;
+        }
+        .wrapper .sliderPage{
+            position: absolute;
+            left:0px;
+            top:0px;
+            width:2000px;
+        }
+        .wrapper .sliderPage li{
+            width:400px;
+            height:250px;
+            float:left;
+        }
+        img{
+            width:100%
+        }
+        .wrapper .btn{
+            position: absolute;
+            top:50%;
+            width:20px;
+            height:20px;
+            border-radius: 50%;
+            background-color:rgb(255, 255, 255);
+            opacity: 0.2;
+            cursor: pointer;
+        }
+        .wrapper .leftBtn{
+            left:15px;
+        }
+        .wrapper .rightBtn{
+            right:15px;
+        }
+        .wrapper .sliderIndex{
+            position: absolute;
+            width:100%;
+            bottom:15px;
+            text-align: center;
+        }
+        .wrapper .sliderIndex span{
+            display:inline-block;
+            width:5px;
+            height:5px;
+            background-color: rgba(255, 254, 254, 0.678);
+            border-radius: 50%;
+            margin-right: 7px;
+        }
+        .wrapper .sliderIndex .active{
+            background:brown;
+        }
+    </style>
+</head>
+<body>
+    <div  class="wrapper">
+            <ul class="sliderPage">
+                <li>
+                    <img src="./1.jpg">
+                </li>
+                <li>
+                    <img src="./2.jpg">
+                </li>
+                <li>
+                    <img src="./3.jpg">
+                </li>
+                <li>
+                    <img src="./4.jpg">
+                </li>
+                <li>
+                    <img src="./1.jpg">
+                </li>
+            </ul>
+            <div class="btn leftBtn"></div>
+            <div class="btn rightBtn"></div>
+            <div class="sliderIndex">
+                <span class="active"></span>
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    <script src="./jquery.js"></script>
+    <script>
+        var width = $('li').width()
+        var left = $('ul').position().left
+        var key = true
+        var timer;
+        var index = 0;
+        function startMove(direction) {
+            clearTimeout(timer)
+            if (key) {
+                key = false
+                if (!direction || direction == 'rightBtn') {
+                    $('.sliderPage').animate({ left: left - width }, 500, 'swing', function () {
+                        left = $('.sliderPage').position().left
+                        index++
+                        if (left == -1600) {
+                            $('.sliderPage').css('left', '0px');
+                            left = 0;
+                            index = 0
+                        }
+                        $('.active').removeClass('active')
+                        $('span').eq(index).addClass('active')
+                        key = true
+                        timer = setTimeout(startMove, 1500)
+                    })
+                }else if(direction == 'leftBtn'){
+                    left == 0 ? $('.sliderPage').css('left', '-1600px') : '';
+                    index == 0 ? index = 3 : index--;
+                    left = $('.sliderPage').position().left
+                    $('.sliderPage').animate({ left: left + width }, 500, 'swing', function () {
+                        left = $('.sliderPage').position().left  
+                        $('.active').removeClass('active')
+                        $('span').eq(index).addClass('active')
+                        timer = setTimeout(startMove, 1500)
+                        key = true
+                    })
+                }
+            }
+        }
+        $('.leftBtn').click(function(){
+            startMove('leftBtn')
+        })
+
+        $('.rightBtn').click(function () {
+            startMove('rightBtn')
+        })
+        $('span').click(function(){
+            clearTimeout(timer)   
+            if (key) {  
+                key = false
+                index = $(this).index()
+                $('.active').removeClass('active')
+                $(this).addClass('active')
+                $('.sliderPage').animate({ left: width * - $(this).index() }, 500, 'swing', function () {
+                    left == -1600 ? $('.sliderPage').css('left', '0px') : '';
+                    left = $('.sliderPage').position().left
+                    timer = setTimeout(startMove, 1500)
+                    key = true
+                })
+            }
+        })
+
+        timer = setTimeout(startMove, 1500)
+      
+        
+    </script>
+</body>
+</html>

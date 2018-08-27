@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>测试</title>
+</head>
+
+<body>
+    <div class="wrapper" id="wrapper">
+        <li></li>
+    </div>
+    <script src="./jquery-3.3.1/jquery-3.3.1.js"></script>
+    <script>
+        console.log(1)
+        var obj1 = {
+            'a': 'bb',
+            'c': 'dd'
+        }
+        var obj2 = {
+            'a': 'bbbb',
+            'd': {
+                'e': "ooo"
+            }
+        }
+        console.log($.extend(true, obj1, obj2)) //{a:"bbbb",c:"dd",d:"eee"} 有相同属性的话，后者覆盖前者
+        // $.extend(true,{},obj1,obj2) ----> 深度克隆
+        // 不填true或$.extend(false,{},obj1,obj2) --->浅克隆
+
+        //$.extend(add) --> jq --> add()
+        //$.fn.extend(add) --> pro --> $('').add()
+
+        //方法拓展
+        //$.extend({add:function(){}}); 
+        //target = arguments[0] => add
+        //i = 1; length = 1; deep = false
+
+        //合并
+        //情况一
+        //$.extend({},obj1,obj2);
+        //target = arguments[0] => {}
+        //i = 1;  length = 3;  deep = false;
+        //情况二
+        //$.extend(true,{},obj1,obj2)
+        //target = arguments[0] => true;
+        //i = 1; length = 4; deep = false
+
+
+        jQuery.extend = jQuery.fn.extend = function () {
+        //可以看出两者共用一个方法
+
+            var options, name, src, copy, copyIsArray, clone,
+                target = arguments[0] || {},
+                i = 1,
+                length = arguments.length,
+                deep = false;
+
+            // Handle a deep copy situation
+            if (typeof target === "boolean") { //合并中的情况二
+                deep = target; //deep = true
+
+                target = arguments[i] || {}; //target = arguments[1] => {}
+                i++; //i = 2
+            }
+
+            // Handle case when target is a string or something (possible in deep copy)
+            if (typeof target !== "object" && !isFunction(target)) { 
+                //兼容防止传了原始值之类
+                target = {};
+            }
+
+            // Extend jQuery itself if only one argument is passed
+            if (i === length) { //拓展
+                target = this; //target等于 jQuery 或 jQuery.prototype
+                i--; //i=0
+            }
+
+            //假如当前没有创建一个新对象，而是$.extend(obj1,obj2)直接把obj2的属性合并至obj1身上的话
+            //那么就是不符合上面所有的if判断直接进行for训话，出现相同属性的话，obj2的属性值，覆盖obj1的属性值
+            for (; i < length; i++) {
+            //方法拓展 i = 0; length = 1; 非true合并 i = 1 length = 3 || 2 ;true合并 i = 2 length = 4|| 3
+            //在合并的情况中，第一次循环即对obj1进行操作的时候，第二次就是对obj2进行操作的时，
+            //也就是先完成好obj1的属性提取后，再放入至target，再进行obj2的属性提取，再放入至target
+                if ((options = arguments[i]) != null) {
+                //options = 拓展:{add} ; 非true:obj1  ; 有true: obj1
+
+                    for (name in options) { //遍历obj1内的属性
+                        src = target[name]; //target为{},所以src = undefined
+                        copy = options[name]; //copy = obj.a = 'bb'
+
+                        // Prevent never-ending loop
+                        //{d：123} 
+                        if (target === copy) {
+                            //假如target === copy，也就是target[name] === options[name]
+                            //也就是说这两者的属性值一样的话那就不需要进行当前的操作直接进入下一次循环
+                            continue;
+                        }
+                        
+                        // Recurse if we're merging plain objects or arrays(如果我们合并纯对象或数组，则递归。)
+                        //该if是处理需要深度克隆的情况的
+                        if (deep && copy && (jQuery.isPlainObject(copy) || //deep为true copy有值 且 copy为对象或者数组的话
+                                (copyIsArray = Array.isArray(copy)))) { 
+                            
+                            if (copyIsArray) { //假如copyIsArray有为true的话，也就是说当前的copy为一个数组
+                                copyIsArray = false;  //把copyIsArray从新变为false,不变的话下次for in时无论copy是不是array都跑到这里面来了
+                                clone = src && Array.isArray(src) ? src : []; 
+                                //在第一次for in时src的值为underfined,所以clone = []
+                                
+                            } else {
+                                //src是对象，同样地此时src的值为undefined,所以clone = {}
+                                clone = src && jQuery.isPlainObject(src) ? src : {};
+                            }
+
+                            //例：obj1{c:[1,2,3]}
+                            target[name] = jQuery.extend(deep, clone, copy);
+                            //target.c = jQuery.extend(true,[],[1,2,3]) ，进入递归，
+                            //在递归过程中，clone也就是target，最后return target至jQuery.extend()
+                            //再赋值至本次target.c = [1,2,3](克隆完成后的)
+                            
+                        } else if (copy !== undefined) {
+                            //{属性：copy} copy不为数组或对象的话，那就是原始值或函数时，
+                            //函数的情况$.extend({jx:function(){}})
+                            //在上一步操作中当jQuery.extend()传入的是参数时，我们已经用target接收了当起那的this指向
+                            //那么此时的target就是jQuery或jQuery.fn,那么target[name] = copy ===> jQuery.jx = function(){}
+                            target[name] = copy;
+                        }
+                    }
+                }
+            }
+            // Return the modified object
+            return target; 
+            //把合并或添加后的结果物返回，当为合并时target为合成后的对象，当为方法拓展时target为jQuery函数或jQuery.prototype
+        };
+    </script>
+
+</body>
+</html

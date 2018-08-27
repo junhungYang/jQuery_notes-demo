@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+
+
+<body>
+    <div id="item#">abc</div>
+    <script src="./jquery-3.3.1/jquery-3.3.1.js"></script>
+    <script>
+        //无new构造,$()/jQuery()获取dom元素API封装
+        //1.jQuery()能返回一个jQuery对象，但返回对象对象的方式却是以函数直接执行jQuery()的方式，而不是new jQuery()的方式进行函数执行
+        //  那么也就是说，jQuery并不作为真正的构成对象的构造函数，而是应该作为某个构造函数，触发构造对象这一动作的一个入口。
+        //  所以在jQuery函数内部必然存在这一步骤，当执行jQuery()后，在其内部，某个函数通过new的形式构造了一个对象，然后jQuery函数把该对象返回出来。
+
+        //2.在jQuery中，真正用于构造一个jQuery对象的方法是init方法，它是定义于jQuery.prototype上的方法，
+        //  也就是说通过new jQuery.prototype.init()的方式便可构造出一个jQuery对象。
+
+        //3.在jQuery中，通过$()所获得的jQuery对象为一个内数组，并且该类数组内部有如下属性{0:div#item length:1 __proto__:Object(0)}，
+        //  也就是说init方法所构成的对象必须具有这些属性
+
+        //4.window.jQuery = window.$= jQuery;
+        //  在jQuery中，会有很多用于整个jQuery运作的变量，为防止全局污染，应该封闭作用域，所以应该通过闭包(立即执行函数手法),
+        //  仅仅把jQuery方法移至作用域外(window),jQuery函数想获得一些变量时，可以到闭包去找，但全局又无法访问到这些变量，实现变量私有化
+
+        //5.为实现调用jQuery的对象上的方法，$('item') 所返回的对象的__proto__属性必须指向jQuery.prototype,但在不做任何修改时，
+        // $('item')的__proto__指向的是init.prototype，而在真正的jQuery中，所有的方法都是封装在jQuery.prototype所指向的对象上的，
+        // 所以init.prototype所指向的对象上没有这些方法，无法实现方法调用，而init.prototype的__proto__属性指向的也不是jQuery.prototype，
+        // 所以为使$('item')所返回的对象能调用jQuery.prototype所指向的对象上的方法，我们把init.prototype也指向jQuery.prototype所指向的对象
+        //  $.('item').__proto__ --> init.prototype.__proto__ --> {html:function(){}} <-- jQuery.prototype.__prototype 
+
+        //6.为实现链式调用$('item').html().css(),应该在每个方法上都return $('item'),而调用这些方法的都是$('item')，所以return this
+        // (function(){
+        //     window.jQuery = window.$= jQuery;
+        //     function jQuery(str) {
+        //         return new jQuery.prototype.init(str);
+        //     }
+        //     jQuery.prototype.init = function(src){
+        //         this[0] = document.getElementById(src);
+        //         this.length = 1;
+        //     }
+        //     jQuery.prototype.html = function() {
+        //         console.log('hello html');
+        //         return this
+        //     }
+        //     jQuery.prototype.css = function() {
+        //         console.log('hello css');
+        //         return this
+        //     }
+        //     jQuery.prototype.init.prototype = jQuery.prototype
+        // })()
+
+
+
+
+        //---------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+        //在jQuery对象中我们可以发现，所有的功能性的函数都不是直接在立即执行函数内部进行定义的，而是传入该立即执行函数的第二个参数factory
+        //而第一层factory只是为了执行该factory,该factory会生成jQuery函数，并且给它的原型上(jQuery.prototype)添加上各种它应该有的方法
+        //最后再把jQuery return至全局供我们使用，
+
+        //该立即执行函数还会接受一个参数，该参数会先进行一个判断，当前jQuery的执行环境是否为windows,
+        //当然在前端工作中它的执行环境就是window,把该window(global)再传至jQuery函数内部，进行一系列的操作
+
+        //这样做的好处在于，它能令结构，分工更为清晰，使代码更具有一个模块化的特点
+        // (function(global,factory){
+        //     factory(global)
+        // })(window,function(window){
+        //     window.jQuery = window.$= jQuery;
+        //     function jQuery(str) {
+        //         return new jQuery.prototype.init(str);
+        //     }
+        //     jQuery.prototype.init = function(src){
+        //         this[0] = document.getElementById(src);
+        //         this.length = 1;
+        //     }
+        //     jQuery.prototype.html = function() {
+        //         console.log('hello html');
+        //         return this
+        //     }
+        //     jQuery.prototype.css = function() {
+        //         console.log('hello css');
+        //         return this
+        //     }
+        //     jQuery.prototype.init.prototype = jQuery.prototype
+        // })
+
+
+        //-------------------------------------------------------------------------------------------------------------------------------
+        //  $(所能接纳的传参)
+        //  1.string
+        //  $(#id)  $('.class') $('div') $('ul li') $('i:eq(1)')  $('input[name="xxx"]')  $('<li></li>')  $('<li/>')  $('<li>content...')
+        //  2. dom
+        //  $(this) $(dom)  
+        //  3.null
+        //  $(null/false/undefined)
+        //  4.fn
+        //  $(function(){})
+        //  5.object || array || $()
+
+
+        // (function(global,factory){
+        //     factory(global)
+        // })(window,function(window){
+        //     window.jQuery = window.$= jQuery;
+        //     function jQuery(str) {
+        //         return new jQuery.prototype.init(str);
+        //     }
+        //     jQuery.prototype.init = function(src){
+        //         if(!src){
+        //             return this
+        //             //假如src为第三项时，即布尔值为false的情况，应当直接返回一个空的jQuery对象{__proto__:Object(0)}
+        //         }
+        //         if(typeof src === "string"){
+        //             //需补完
+        //         }else if(src.nodeType){
+        //             this[0] = src;
+        //             this.length = 1;
+        //             return this
+        //             //假如src为第二项时，应当返回的jQuery对象为{0:传入的dom元素,length:1,__proto__:Object(0)}
+        //         }else if(typeof src == "function"){
+        //             // root.ready !== undefined ? root.ready( selector ) :selector( jQuery );
+        //            this[0]= document;
+        //            this.length = 1;
+        //            return src()
+        //             //需补完,假如src为第四项时，应当返回的jQuery对象为{0:document,length:1,__proto__:Object(0)},并且执行传入的函数
+        //             //正常来说不会存在直接return src()也就是 selector(jQuery)，除非JQ文件残缺
+        //         }else{
+        //             //需补完makeArray方法，markArray可以把init对象(类数组)变为一个真正的数组，但在这里的返回值依然回是一个jQuery对象
+        //             //当src为第五种情况时，应当返回的jQuery对象为{0:传入的对象或数组,length:1,__proto__:Object(0)}
+        //             this[0] = src;
+        //             this.length = 1;
+        //             return this
+        //         }
+        //     }
+        //     jQuery.prototype.init.prototype = jQuery.prototype
+        // })
+        //--------------------------------------------------------------------------------------------------------------------
+        //$('<li></li>') $('<li>') $('<li/>') $('<li>abcd</li>')
+        //$('<li>sfsd')$('    <li/>')
+        //$('<div>',{html:'wew',cg:'henshuai'})
+        //$('#id')
+        //$('div')
+        //$('ul li')
+
+        // rquickExpr = /^    (?:\s*(<[\w\W]+>)[^>]*    |    #([\w-]+))     $/
+
+        //在这里?的意义为在使用match方法时不对当前?所在括号内符合规则的字符串进行捕获
+        //^ $这个字符串应该以(?:\s*(<[\w\W]+>)[^>]*|#([\w-]+))开头，同时也是结尾
+
+        //\s*(<[\w\W]+>)  \s==空格  \s*==空格0~正无穷个,  
+        //<   [\w\W]+  > , <>内可以有1~正无穷个字符,该字符内容可以为0-9a-Z_还有非这些字符的字符，也就是可以为所有的字符
+        //所以首先$('<li></li>') $('<li>') $('<li/>') $('  <li/>') $('<li>abcd</li>')都可以被匹配出来
+
+        //[^>]*为非'>'0~正无穷个，结合它所在位置(<[\w\W]+>)[^>]*，即在(<[\w\W]+>)的后面可以有非'>'的字符0~正无穷个
+        //所以$('<li>sfsd')$('    <li/>sljdsj') 可以匹配出该情况
+
+        //$('<div>',{html:'wew',cg:'henshuai'})的匹配相当于$('<li>')，第二个参数为上下文与正则无关。
+
+
+        //或者
+
+        //#([\w-]+)   字符串中的第一位为#  并且#后可以有1~正无穷个字符，并且每一个字符必须是是'0-9a-Z'或'_'或'-'
+        //所以#('#item')可以匹配出来
+        
+        //exec方法返回的结果事例
+        //rquickExpr = /^(?:\s*(<[\w\W]+>)[^>]*|#([\w-]+))$/
+        //str = "#abc"
+        //["#abc", undefined, "abc", index: 0, input: "#abc", groups: undefined]
+        //第一位代表//内所匹配出来的结果，第二位代表第一个子表达式的匹配结果，第三位为第二个子表达式的结果，
+        //index为从字符串中的哪一个位置开始匹配成功，input为输入的值
+        (function (global, factory) {
+            factory(global)
+        })(window, function (window) {
+            window.jQuery = window.$ = jQuery;
+            function jQuery(selector) {
+                return new jQuery.prototype.init(selector);
+            }
+            jQuery.prototype.init = function (selector) {
+                if (typeof selector === "string") { //假如selector为字符串的画
+                    
+                    if (selector[0] === "<" &&
+                        selector[selector.length - 1] === ">" &&
+                        selector.length >= 3) {
+                    //假如selector的第0位为<。并且最后一位为>，并且长度不小于三的话进入该判断
+                    //$('<li></li>') $('<li>') $('<li/>') $('<li>abcd</li>')
+                        match = [null, selector, null];
+                        // match = [null,'<li>',null]
+                    } else {
+                        match = rquickExpr.exec(selector);
+                        //假如不符合上面的情况，那么也就是$('<li>sfsd')  $('  <li/>')  $('#id') $('div') $('ul li')的话
+                        //用exec匹配出来的结果再赋值给match，
+                        //$('#id')-->match == ['#id,undefined,'id',index:0,.....]
+                        //$('   <li>sfsd') --> match == ['   <li>sfsd','<li>',undefined,index:0,....]
+                        //在match数组中的各个值中我们需要用到去创建标签的是，
+                        //当$('#id')输入的值为id属性的字符串时，取match[2]
+                        //当$(<..>)包含<>标签符号时，取match[1]
+                        //可以发现在第二种情况中数组match[1]的字符串形式是与 之前的判断中所获得的match[1]的形式是一样的
+
+                        //$('div') $('ul li')匹配不出，返回null  match == null
+                    }
+
+                    //根据match进行判断
+                    if (match && (match[1] || !context)) {
+                        //match有值且值不为(null,undefined之类)，判断match[1]为true的话<>创建标签的形式可以进入，即使math[1]不为true那就是id的形式咯
+                        //只要它在$()的时候没有传第二个参数的话，或传的是布尔值为false的一类，#id形式的也可以进来
+                   
+                        if (match[1]) { //$(<li>)
+                            
+                            context = context instanceof jQuery ? context[0] : context;
+                            //查看context的原型链上是否有jQuery.prototype，
+                            //假如context压根没传，那么context依然是context也就是undefined
+                            //假如context传了，但传的不是jQuery对象，而是其他的值的话那么context依然是context
+                            //假如context传了，且传的是jQuery对象,，那么context=context[0]--->context==通过$()形式获取的dom元素
+
+                            //工具方法merge可以用于数组或类数组合并$.merge([1,2],[3,4]),$.merge({0:1,length:1},[2,3])
+                            //this指向当前正要被创建的jQ实例对象，就当前环境而言this除了一些默认属性以外，它依然是个空对象
+                            //工具方法parseHTML可以把转换为dom节点，$.parseHTML('<li/><span/>',document,true) 返回[li,span]
+                            
+                            jQuery.merge(this, jQuery.parseHTML(
+                                match[1],//'<li>'
+                                context && context.nodeType ? context.ownerDocument || context : document,true
+                            //是否为true && 是否为元素节点 ? 是的话传#documen或传它自己本身，因为在上一步中我们已经对
+                            //假如$()时,传的第二个参数为jQuery对象时，context = context[0]的操作，所以该jQuery对象有ownerDocument属性，
+                            //该属性是HTMLDivElement对象上的属性，需要注意的是假如一个jQuery对象没有经过作为第二个参数传入过jQuery内的话，它没有该属性
+                            //假如传入的是原生dom元素的话，那么传它自己本身，既不是jQuixiang也不是原生dom的话，直接传document对象
+                            //创建一个标签最终是需要插入至doucment，而context在这里就充当一个doucment的引用，当dom元素创建完毕后插入至context
+                            ));
+                            //merge将this(空对象)与jQuery.parseHTML所返回的数组[li]合并后，此时this就已经成为一个真正的jQ实例对象了
+                            //this {0:li,length:1}
+                            
+                            
+                            if (rsingleTag.test(match[1]) && jQuery.isPlainObject(context)) {
+                                //risingleTag正则表达式要求我们按正常的规范去创建标签，假如规范创建标签的话，这里不会是false
+                                //$.isPlainObject()用于判断传入的对象是否为对象字面量，是返回true，否返回false,这里判定的是context
+                                //那么也就是说当前该系列的判断是针对$(<li>,{html:'wew',cg:'henshuai'})的情况进行的
+                                for (match in context) { //循环遍历context对象字面量里的每一属性的值
+                                    //因为match已经在上一个阶段使用完毕，出于节省变量，这里不再声明新变量，而选择用match去替代
+                                    //context == {html:'wew',cg:'henshuai'}
+                                    if (jQuery.isFunction(this[match])) { 
+                                        //jQuery.isFunction(this[match]).看当前的属性是否为jQuery对象上的方法
+                                        //这里的this指向jQuery对象
+                                        this[match](context[match]);
+                                        //是的话该jQ实例对象，执行该方法(如html),context[match]
+                                        //在这里context[match]即context.html ==> 'wew'
+                                        //所以this[match](context[match]) ==> this.html('wew'),
+                                    } else {
+                                        //假如当前context对象的属性不是jQuery上的方法的话
+                                        this.attr(match, context[match]);
+                                        //那么把该属性作为属性名传入至attr方法内，attr方法用于给dom元素添加属性
+                                    }
+                                }
+                            }
+
+                            return this;
+                            //最后把return this，生成jquery实例对象的过程结束，
+                        } else {
+                            //上面的if判断不成立的话，那当前的行为就是通过id获取dom元素$('#id')
+                            elem = document.getElementById(match[2]);
+                            //match == ['#id,undefined,'id',...]，通过原生JS获取id为'id'的dom元素
+                            if (elem) {
+                                //假如该dom元素有，那么当前的jq空对象上的第一位为该dom元素，并且添加length属性
+                                this[0] = elem;
+                                this.length = 1;
+                            }
+                            //id为match[2]的dom元素没有，那么就直接return一个空的jq对象
+                            return this;
+                        }
+
+                    } else if (!context || context.jquery) {
+                        //假如当前没传context,或者传进来的context是一个jq对象的话，进入到这里
+                        //context.jquery返回的是当前jquery的版本号，
+                        //假如传进来了对象，但不是通过$()生成的对象的话就不会有该属性了
+                        //$('li')标签选择器 || $('li',$('ul'))
+                        return (context || root).find(selector);
+                        //假如context有那么$('ul').find('li'),假如ul内有li子元素的话那么直接把li返回
+                        //假如cotext没有，那么就走到root咯，root == $(document),也就是说直接在document上找到li并把它返回
+                        //同样find并不是直接返回dom元素，而是把该dom元素包装成jq对象返回，最后再把find的返回值(jq对象)返回出来，
+                    } else {
+                        //$('li','ul')的情况，这里context乱写的话没有任何意义，直接报错的了
+                        //this为jq空对象它的constructor执行，也就是jQuery函数执行，那么也等同于jQuery('ul')
+                        //所以说即使context传进来的不是jq对象而是字符串的话，也会先通过$('ul')的方法获取到该dom元素
+                        //并把它包装成jq对象，再find 'li',假如li有的话把它包装成jq对象返回出来
+                        return this.constructor(context).find(selector);
+                    }
+
+                    // HANDLE: $(DOMElement)
+                }
+            }
+            jQuery.prototype.init.prototype = jQuery.prototype
+        })
+    </script>
+</body>
+
+</html>

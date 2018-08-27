@@ -1,0 +1,202 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        *{
+            margin:0;
+            padding:0;
+            list-style: none;
+        }
+        .wrapper{
+            position: relative; 
+            margin:100px auto;
+            width:400px;
+            height:250px;
+            /* border:1px solid #000; */
+            overflow:hidden;
+        }
+        .ul{
+            position: absolute;
+            left:0px;
+            top:0px;
+            width:2000px;
+        }
+        .imgli{
+            width:400px;
+            height:250px;
+            float:left;
+        }
+        .spanArr{
+            position: absolute;
+            width:100%;
+            bottom:15px;
+            text-align: center;
+        }
+        .spanIndex{
+            display:inline-block;
+            width:5px;
+            height:5px;
+            background-color: rgba(255, 254, 254, 0.678);
+            border-radius: 50%;
+            margin-right: 7px;
+        }
+        .active{
+            background:rgb(241, 252, 84);
+        }
+        .leftBtn{
+            position: absolute;
+            top:50%;
+            width:20px;
+            height:20px;
+            border-radius: 50%;
+            background-color:rgb(255, 255, 255);
+            opacity: 0.5;
+            cursor: pointer;
+            left:15px;
+        }
+        .rightBtn{
+            position: absolute;
+            top:50%;
+            width:20px;
+            height:20px;
+            border-radius: 50%;
+            background-color:rgb(255, 255, 255);
+            opacity: 0.5;
+            cursor: pointer;
+            right:15px;
+        }
+    </style>
+</head>
+<body>
+    <div></div>
+    <script>
+        var oDiv = document.getElementsByTagName('div')[0]
+            HTMLDivElement.prototype.createTurnPage = function (imgArr, divClass, ulClass, liClass, spanArr, spanIndexClass, spanActive, leftBtn, rightBtn) {
+                if (!imgArr || !divClass || !ulClass || !liClass) {
+                    return;
+                } else {
+                    this.className = divClass
+                    var ul = document.createElement('ul')
+                    this.appendChild(ul)
+                    ul.className = ulClass;
+                    var li;
+                    var img;
+                    for (var i = 0; i < imgArr.length; i++) {
+                        img = document.createElement('img')
+                        li = document.createElement('li')
+                        li.className = liClass
+                        ul.appendChild(li).appendChild(img)
+                        img.setAttribute('src', imgArr[i])
+                        img.style.width = '100%'
+                    }
+
+                }
+                if (leftBtn && rightBtn) {
+                    var _leftBtn = document.createElement('div');
+                    var _rightBtn = document.createElement('div');
+                    this.appendChild(_leftBtn);
+                    this.appendChild(_rightBtn);
+                    _leftBtn.className = leftBtn;
+                    _rightBtn.className = rightBtn;
+                    _leftBtn.onclick = function () {
+                        autoMove('right->left')
+
+                    }
+                    _rightBtn.onclick = function () {
+                        autoMove('left->right')
+                    }
+                }
+                if (spanArr && spanIndexClass && spanActive) {
+                    var indexBt = document.createElement('div')
+                    this.appendChild(indexBt)
+
+                    indexBt.className = spanArr;
+                    var span;
+                    var spanArray = []
+                    for (var j = 0; j < imgArr.length - 1; j++) {
+                        span = document.createElement('span')
+                        span.className = spanIndexClass
+                        indexBt.appendChild(span)
+                        spanArray.push(span)
+                    }
+                    spanArray[0].classList.add(spanActive);
+                    function changeIndex(_index) {
+                        document.getElementsByClassName(spanActive)[0].classList.remove(spanActive)
+                        spanArray[_index].classList.add(spanActive);
+                    }
+                    for (var i = 0; i < spanArray.length; i++) {
+                        (function (myindex) {
+                            spanArray[i].onclick = function () {
+                                console.log(1)
+                                key = false;
+                                clearTimeout(timer)
+                                index = myindex;
+                                startMove2(ul, { left: -index * moveWidth }, function () {
+                                    key = true;
+                                    timer = setTimeout(autoMove, 1500);
+                                    changeIndex(index)
+                                })
+                            }
+                        }(i))
+                    }
+                }
+                var timer = null;
+                var moveWidth = ul.children[0].offsetWidth
+                var num = ul.children.length - 1;
+                var turnKey = true;
+                var index = 0;
+                function autoMove(direction) {
+                    clearTimeout(timer)
+                    if (turnKey) {
+                        turnKey = false
+                        if (!direction || direction == 'left->right') {
+                            index++;
+                            startMove2(ul, { left: ul.offsetLeft - moveWidth }, function () {
+                                if (ul.offsetLeft == -num * moveWidth) {
+                                    index = 0;
+                                    ul.style.left = '0px';
+                                }
+                                turnKey = true;
+                                timer = setTimeout(autoMove, 1500);
+                                (spanArr && spanIndexClass && spanActive) ? changeIndex(index) : '';
+                            })
+                        } else if (direction == 'right->left') {
+                            if (ul.offsetLeft == 0) {
+                                ul.style.left = -num * moveWidth + 'px'
+                                index = num;
+                            }
+                            index--
+                            startMove2(ul, { left: ul.offsetLeft + moveWidth }, function () {
+                                turnKey = true;
+                                timer = setTimeout(autoMove, 1500);
+                                (spanArr && spanIndexClass && spanActive) ? changeIndex(index) : '';
+                            })
+                        }
+                    }
+                }
+
+                function startMove2(obj, target, callback) {
+                    clearInterval(obj.timer)
+                    var iSpeed = 20;
+                    obj.timer = setInterval(function () {
+                        iSpeed = (target.left - obj.offsetLeft) / 5
+                        iSpeed = iSpeed > 0 ? Math.ceil(iSpeed) : Math.floor(iSpeed)
+                        obj.style.left = obj.offsetLeft + iSpeed + 'px'
+                        if (obj.offsetLeft == target.left) {
+                            clearInterval(obj.timer)
+                            callback()
+                        }
+                    }, 20)
+                }
+                setTimeout(autoMove, 1500)
+            }
+            oDiv.createTurnPage(['./1.jpg', './2.jpg', './3.jpg', './4.jpg', './1.jpg',], 'wrapper', 'ul', 'imgli', 'spanArr', 'spanIndex', 'active', 'leftBtn', 'rightBtn')
+    </script>
+
+</body>
+</html>

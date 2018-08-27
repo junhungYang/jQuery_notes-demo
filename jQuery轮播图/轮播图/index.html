@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        *{
+            margin:0;
+            padding:0;
+            list-style:none;
+        }
+        .wrapper{
+            position: relative;
+            margin:100px auto;
+            width:400px;
+            height:250px;
+            /* border:1px solid #000; */
+            overflow:hidden;
+        }
+        .wrapper .sliderPage{
+            position: absolute;
+            left:0px;
+            top:0px;
+            width:2000px;
+        }
+        .wrapper .sliderPage li{
+            width:400px;
+            height:250px;
+            float:left;
+        }
+        img{
+            width:100%
+        }
+        .wrapper .btn{
+            position: absolute;
+            top:50%;
+            width:20px;
+            height:20px;
+            border-radius: 50%;
+            background-color:rgb(255, 255, 255);
+            opacity: 0.2;
+            cursor: pointer;
+        }
+        .wrapper .leftBtn{
+            left:15px;
+        }
+        .wrapper .rightBtn{
+            right:15px;
+        }
+        .wrapper .sliderIndex{
+            position: absolute;
+            width:100%;
+            bottom:15px;
+            text-align: center;
+        }
+        .wrapper .sliderIndex span{
+            display:inline-block;
+            width:5px;
+            height:5px;
+            background-color: rgba(255, 254, 254, 0.678);
+            border-radius: 50%;
+            margin-right: 7px;
+        }
+        .wrapper .sliderIndex .active{
+            background:brown;
+        }
+            </style>
+</head>
+<body>
+    <div  class="wrapper">
+        <ul class="sliderPage">
+            <li>
+                <img src="./1.jpg">
+            </li>
+            <li>
+                <img src="./2.jpg">
+            </li>
+            <li>
+                <img src="./3.jpg">
+            </li>
+            <li>
+                <img src="./4.jpg">
+            </li>
+            <li>
+                <img src="./1.jpg">
+            </li>
+        </ul>
+        <div class="btn leftBtn"></div>
+        <div class="btn rightBtn"></div>
+        <div class="sliderIndex">
+            <span class="active"></span>
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+    <!-- <script src="./move.js"></script> -->
+    <script>
+
+
+
+        var timer = null;   
+        var sliderPage = document.getElementsByClassName('sliderPage')[0] //需要移动的长条ul
+        var moveWidth = sliderPage.children[0].offsetWidth  // 需要移动的宽度是它的任意一个子元素的宽度
+        var num = sliderPage.children.length-1; 
+        //num作为单位位移距离moveWidth的倍数，- num*moveWidth可以理解为当前需要位移的目标值，.....//length-1代表代表当前最后一张的索引值4
+        var leftBtn = document.getElementsByClassName('leftBtn')[0];
+        var rightBtn = document.getElementsByClassName('rightBtn')[0]
+        var key = true;  //用于对正在使轮播图sliderPage位移中的函数进行加锁，防止疯狂点击
+        var index = 0;  //用于表示四张图片每张的索引值
+        var spanArray = document.getElementsByClassName('sliderIndex')[0].getElementsByTagName('span') //用于表示原点按钮
+        leftBtn.onclick = function(){
+            autoMove('right->left')  
+            //right代表右边的图片(当前被展示)，left代表左边的图片，当点击leftBtn时，从右边的图片到左边的图片，sliderPage的运动方向wie从左至右
+        }
+        rightBtn.onclick = function(){
+            autoMove('left->right') //同理当点解rightBtn，从左边的图片(当前被展示)过渡到右边的图片，sliderPage从右至左
+        }
+        for(var i = 0 ; i< spanArray.length; i++){ //使用立即执行函数给每个span都绑定一个点击事件
+            (function(myindex){
+                spanArray[i].onclick = function(){
+                    key = false; //同样的当点击后key应该为false防止疯狂点击
+                    clearTimeout(timer)
+                    index = myindex;
+                    startMove2(sliderPage,{left:-index*moveWidth},function(){
+                        //i代表每一张图片的索引，假如点击第二张那么 当前要移动的距离为-400px, 那么-索引*moveWidth == -1*moveInde == -400 
+                        key = true;
+                        timer = setTimeout(autoMove,1500);
+                        changeIndex(index)
+                    })
+                }
+            }(i)) 
+        }
+
+        //默认轮播方向/点击右侧按钮  'left->right'/undefined  (从左边的图片到右边的图片)
+        //点击左侧按钮  'right->left'(从右侧的图片到左侧的图片)
+        function autoMove(direction) { //autoMove为使sliderPage产生位移的函数，它接收一个参数，用于分开处理不同方向的移动
+            clearTimeout(timer)
+            //清理上一个定时器，虽然setTimeout只进行一次便不再进行，但我们依然要清除它的理由是假如它还在等待的途中，我们点击了其中一个按钮的话
+            //等同于autoMove被提前执行，同时它可能在该setTimeout之前，由按钮引起的事件被执行完毕生成了新的一个setTimeout，那么理论上应该由
+            //该新生成的setTimeout在1500毫秒后执行automove，但之前的setTimeout赶在了它的前面先执行了autoMove(因为之前的是先生成的)，这就导致了
+            //无可推测的重叠争抢还有混乱了所以必须清楚上衣个setTimeout，排除一切可能产生争抢的因素，令代码按规定时间有序进行
+            if (key) {
+                key = false //autoMove被触发为防止疯狂点击，此时把key设为false,在程序完全执行完成前，无论如何点击图片产生位移部分的代码都不被执行
+                if (!direction || direction == 'left->right') {  
+                    //在页面刚被登录时，轮播图也应该正在运动,也就是最初的setTimeout(autoMove,1500);在该形式中autoMove没法传参，
+                    //所以我们要对direction作兼容处理,当！direction时，产生怎样的位移
+                    index++; // 当前展示图片更改为下一张，所以index ++ 
+
+                    //每一次定时器执行，sliderPage应该位移的目标值应该是当前的offsetLeft-moveWidth
+                    startMove2(sliderPage, { left: sliderPage.offsetLeft - moveWidth }, function () { 
+                        //startMove2的第三个参数为一个回调函数，用于作当sliderPage移动至目标值时，程序需要做的一系列判断或者参数的更新
+                        if (sliderPage.offsetLeft == -num * moveWidth) { 
+                            //假如当前sliderPage.offsetLeft 移动至最后一张时(p5),需要让p5瞬间变为p1，所以此时应该让sliderPage.style.left的值为0；
+                            //并且更新当前被展示的图片的索引值，index为0 
+                            index = 0;
+                            sliderPage.style.left = '0px';
+                        }
+                        key = true;  //sliderPage到达目的地，开锁
+                        timer = setTimeout(autoMove, 1500) //重新生成setTimeout令sliderPage进入默认轮播
+                        changeIndex(index); //执行changeIndex更新小圆点的样式
+                    })
+
+                } else if (direction == 'right->left') {
+                    //在点击leftBtn时sliderPage应该自左向右移动，那么假如当前的它的left坐标为0时，在不作修改的情况下，会显示空白，
+                    //原因在于我们没有让它返回至第5张图片，并且从第5张图片往第四张图片移动，所以必须另当前的left等于-num*moveWidth等于1600px；
+                    //同时另index = num = 4,也就是当前第5张图片。
+                    if (sliderPage.offsetLeft == 0) {
+                        sliderPage.style.left = -num * moveWidth + 'px'
+                        index = num;
+                    }
+                    index-- 
+                    // 当前展示的图片准备更改为前一张，所以index -- ,
+                    //在上面的判断中图片虽然由第一张变为第五张，但这只是准备工作，sliderPage还没产生我们所希望的移动,
+                    startMove2(sliderPage, { left: sliderPage.offsetLeft + moveWidth }, function () {
+                        key = true;
+                        timer = setTimeout(autoMove, 1500)
+                        changeIndex(index);
+                    })
+                }
+                //在两种direction中在涉及当当前图片为实际的最后一张或第一张时的代码所在位置之所以不同的原因在于，
+                //当sliderPage.offsetLeft == -num * moveWidth,它应该是位于到达目标点后的后备工作，所以它应该在回调函数function(){}内
+                //而sliderPage.offsetLeft == 0则应该是在sliderPage在开始运动前应该做的预备工作，所以它应该在starMove2()执行前
+            }
+        }
+
+            function startMove2(obj,target,callback) {
+                clearInterval(obj.timer)
+                var iSpeed=20;
+                obj.timer = setInterval(function () {
+                    iSpeed = (target.left - obj.offsetLeft)/5
+                    iSpeed = iSpeed > 0 ? Math.ceil(iSpeed) : Math.floor(iSpeed)
+                    obj.style.left = obj.offsetLeft + iSpeed + 'px'
+                    if (obj.offsetLeft == target.left) {
+                        clearInterval(obj.timer)
+                        callback()   //callback()应该在sliderPage到达目标点后再执行
+                    }
+                    
+                }, 20)
+            }
+            //sliderIndex到达目标点后执行changeIndex，传入相应的索引位
+            function changeIndex(_index){
+                for(var i = 0; i<spanArray.length ; i++){
+                    console.log(spanArray.length)
+                    spanArray[i].className = 'abc'; //先令所有的小圆点变为默认的样子
+                }
+                spanArray[_index].className = "active";  //再通过对应的索引位改变当前被选的小圆点
+            }
+        setTimeout(autoMove,1500)  //在网页刚被登录的一开始便启动定时器，最初的setTimeout
+
+        //在这里之所以不能使用setInterval的原因在于，setInterval是极其不稳定的，当两个定时器互相嵌套时，时间上的差异，将会使页面所发生的效果上的偏差更加强烈
+        //在不加锁但是排除疯狂点击的情况下setTimeout依然能正常运行，但setInterval却会产生效果上的错误，该错误体现在从另外一个页面从新切换为当前页面时
+        //即使是使用setInterval也务必加上锁.
+
+
+        // function autoMove(){
+        //     //通过控制key的自增来模拟图片的索引值，然后移动ul
+        //     key++;=
+        //     if(key > num){
+        //         //图片已经滑动到最后一张，接下来，跳转到第一张，然后在滑动到第二张
+        //         //当图片到最后一张时，它回弹至第一张，而当代码执行到此时时，startMove2是还没有被执行的，
+        //         //当startMove执行时，图片滚到第二张，但没有经过autoMove,当然key也就没有++，所以我们应该事先让key等于1,
+        //         //代表本次轮播结束后
+        //         sliderPage.style.left = 0;
+        //         key = 1;
+        //     }
+        //     startMove2(sliderPage,{left:sliderPage.offsetLeft - moveWidth})
+        // }
+    </script>
+</body>
+</html>

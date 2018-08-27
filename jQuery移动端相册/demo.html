@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        *{
+            padding:0;
+            margin:0;
+            list-style: none;
+            font-size: 0;
+        }
+        html,body,.wrapper{
+            width:100%;
+            height:100%;
+        }
+        .wrapper  ul{
+            width:100%;
+            height:100%;
+        }
+        .wrapper ul li{
+            box-sizing: border-box;
+            display: inline-block;
+            width:25%;
+            border:1px solid white;
+            overflow: hidden;
+            
+        }
+        .wrapper ul li img:active{
+            opacity: 0.9;
+        }
+        .show{
+            display:none;
+            position: absolute;
+            top:0;
+            left:0;
+            width:100%;
+            height: 100%;
+            background:white;
+        }
+        .show img{
+            position: absolute;
+            top:0;
+            left:0;
+            right:0;
+            bottom:0;
+            margin:auto;
+        }
+        .w{
+            height:100%;
+        }
+        .h{
+            width:100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <ul></ul>
+        <div class="show"></div>
+    </div>
+    <script src="./zepto.js"></script>
+    <script src="./touch.js"></script>
+    <script>
+        //为保持图片的比例暂时根据图片的比例设置时高为100%还是宽为100%
+        var arr = [ {url:'./0.jpg',size:'h'},
+            {url:'./1.jpg',size:'w'},
+            {url:'./2.jpg',size:'w'},
+            {url:'./3.jpg',size:'w'},
+            {url:'./4.jpg',size:'w'},
+            {url:'./5.jpg',size:'h'},
+            {url:'./6.jpg',size:'w'},
+            {url:'./7.jpg',size:'w'},
+            {url:'./8.jpg',size:'w'},
+            {url:'./9.jpg',size:'h'},
+            {url:'./10.jpg',size:'h'},
+            {url:'./11.jpg',size:'w'},
+            {url:'./12.jpg',size:'w'},
+            {url:'./13.jpg',size:'h'},
+            {url:'./14.jpg',size:'w'},
+            {url:'./15.jpg',size:'h'}]
+
+        function renderPage(){
+            var str = '';
+            arr.forEach(function(ele,index){
+                str += '<li><img class='+ele.size+'  src='+ele.url+' alt=""></li>'
+            })
+            $('.wrapper ul').append($(str))
+            $('li').css('height',$('li').width())
+            //通过获得index的实际宽度，使高度与宽度一致，成为一个正方形
+            bindEvent()
+        }
+        renderPage()
+       
+        //通过index判断当前点击的是哪一张图片
+        function bindEvent() {
+            var index;
+            $('ul').on('tap','li',function(){
+                index = $(this).index();
+                loadImg(index)
+            })
+            $('.show').on('tap',function(){
+                $(this).css('display','none')
+            }).on('swipeLeft',function(){
+                index != arr.length-1 ? index ++ : '';
+                //index的++和--需设置一个有效区间，否则将出现负数或超过数组的长度
+                if(index < arr.length){
+                    loadImg(index)
+                }
+            }).on('swipeRight',function(){
+                index != 0 ? index -- : '';
+                if(index >= 0){
+                    loadImg(index)
+                }
+            })
+        }
+  
+
+        function loadImg(index) {
+            $('.show').html('')
+            //当发生划动事件时清空当前正在展示的show内的内容添加上新的内容
+            var deviceW_H = $(window).width()/$(window).height();
+            //为判断当前图片应该是高度100%还是宽度100%
+            var img = new Image();
+            img.src = arr[index].url;
+            $('.show').css('display','block').append($(img));
+            //创建一个新的image对象，添加上相应的url插入至show
+            img.onload = function() {
+                //使用onload的原因在于，图片加载为异步加载，需要等图片加载成功才能执行以下代码
+                var imgW_H = img.width / img.height;
+                if(imgW_H < deviceW_H){
+                    //用图片的宽高比与屏幕的宽高比进行比较，当图片宽>高，图片宽高比大于屏幕宽高比，相反小于宽高比
+                    $(this).css('height','100%')
+                }else{
+                    $(this).css('width','100%')
+                }
+            }
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // $('ul').on('tap','li',function(e) {
+        //     showImg(this,e.target)
+        // })
+        // function showImg(_this,target) {
+        //     $('ul li').css('display','none')
+        //     $(_this).css('display','block').css('width','100%').css('height','100%')
+        //     $(target).is('.w') ? $(target).removeClass('w') : $(target).removeClass('h')
+        //     $(target).css('width','100%')
+        //     if($(target).height() > screen.availHeight){
+        //         var scaleWidth = $(target).width() / $(target).height() * screen.availHeight
+        //         $(target).css('height',screen.availHeight).css('width',scaleWidth).css('position','absolute').css('left','50%').css('transform','translate(-50%,0)')
+
+        //     }else{
+        //         $(target).addClass('activeWidth')
+        //     }
+        // }
+
+    </script>
+</body>
+</html>
